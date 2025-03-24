@@ -1,43 +1,38 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { getRandomCrimes } from "./communityCrimes"
 import { markers } from "./markers"
 
-let map
+const initialCentreLatitude = 51.5072
+const initialCentreLongitude = -0.1276
+const initialZoom = 15
 
-async function initMap(mapElement) {
-  if (!mapElement) return
-
-  const position = { lat: 51.5495, lng: 0.0597 }
-  //@ts-ignore
-  const { Map } = await google.maps.importLibrary("maps")
-
-  map = new Map(mapElement, {
-    zoom: 12,
-    center: position,
-    mapId: "HACKNEY_MAP",
-  })
-
-  return map
-}
-
-export function getMap() {
+export function Map() {
   const mapRef = useRef(null)
 
+  const [map, setMap] = useState(null)
+  const [communityReportedCrimes, setCommunityReportedCrimes] = useState([])
+
   useEffect(() => {
+    setCommunityReportedCrimes(
+      getRandomCrimes(initialCentreLatitude, initialCentreLongitude, initialZoom),
+    )
+
     const googleMapsScript = document.createElement("script")
-    googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_API_KEY}&v=weekly&callback=initMap`
+    googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_API_KEY}&v=weekly`
     googleMapsScript.async = true
     googleMapsScript.defer = true
     window.document.body.appendChild(googleMapsScript)
 
     googleMapsScript.onload = async function () {
       if (mapRef.current) {
+        /*global google*/
         const { Map } = await google.maps.importLibrary("maps")
-        const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
-
         const map = new Map(mapRef.current, {
-          center: { lat: 51.5495, lng: 0.0597 },
-          zoom: 12,
-          mapId: "HACKNEY_MAP",
+          center: { lat: initialCentreLatitude, lng: initialCentreLongitude },
+          zoom: initialZoom,
+          minZoom: 11,
+          maxZoom: 17,
+          mapId: "OUR_FUN_MAP",
         })
 
         markers.forEach((markerData) => {
@@ -66,6 +61,7 @@ export function getMap() {
             infoWindow.open(map, marker)
           })
         })
+        setMap(map)
       }
     }
 
@@ -77,7 +73,24 @@ export function getMap() {
     }
   }, [])
 
+  useEffect(() => {
+    ;(async function () {
+      if (mapRef.current && map) {
+        const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
+        communityReportedCrimes.map(
+          (crime) =>
+            new AdvancedMarkerElement({
+              map,
+              position: { lat: crime.latitude, lng: crime.longitude },
+              content: new PinElement({
+                scale: 0.875,
+                background: "#ff8000",
+              }).element,
+            }),
+        )
+      }
+    })()
+  }, [map, communityReportedCrimes])
+
   return <div id="map" ref={mapRef} style={{ height: "400px", width: "100%" }}></div>
 }
-
-export { initMap }

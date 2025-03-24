@@ -1,11 +1,11 @@
 import BottomNavigation from "./BottomNavigation"
-import { getMap } from "./map"
+import { Map } from "./map"
 
 function App() {
   return (
     <div className="app">
-      {getMap()}
       <BottomNavigation />
+      <Map />
     </div>
   )
 }
