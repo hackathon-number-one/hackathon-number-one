@@ -105,20 +105,46 @@ export function Map() {
     ;(async function () {
       if (mapRef.current && map) {
         const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
-        policeData.map(
-          (police) =>
-            new AdvancedMarkerElement({
+        policeData.map((police) => {
+          const marker = new AdvancedMarkerElement({
+            map,
+            position: {
+              lat: Number(police.location.latitude),
+              lng: Number(police.location.longitude),
+            },
+            content: new PinElement({
+              scale: 0.875,
+              background: "#0000FF",
+            }).element,
+          })
+
+          const contentString = `
+          <div style="display: flex; align-items: center; justify-content: space-between; min-width: 150px; padding-right: 8px;">
+            <span style="font-family: Arial, sans-serif; font-size: 14px;">${police.category}</span>
+          </div>
+        `
+
+          const infowindow = new google.maps.InfoWindow({
+            content: contentString,
+            pixelOffset: new google.maps.Size(0, -5),
+            disableAutoPan: false,
+          })
+
+          marker.addListener("click", () => {
+            if (currentInfoWindow.current) {
+              currentInfoWindow.current.close()
+            }
+
+            infowindow.open({
+              anchor: marker,
               map,
-              position: {
-                lat: Number(police.location.latitude),
-                lng: Number(police.location.longitude),
-              },
-              content: new PinElement({
-                scale: 0.875,
-                background: "#0000FF",
-              }).element,
-            }),
-        )
+            })
+
+            currentInfoWindow.current = infowindow
+          })
+
+          return marker
+        })
       }
     })()
   }, [map, policeData])
