@@ -6,6 +6,16 @@ const initialCentreLatitude = 51.5072
 const initialCentreLongitude = -0.1276
 const initialZoom = 15
 
+function formatCategory(category) {
+  if (!category) return ""
+
+  // Split by hyphens, capitalize first letter of each word, then join with spaces
+  return category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 export function Map() {
   const mapRef = useRef(null)
   const currentInfoWindow = useRef(null) // Add this to track the open InfoWindow
@@ -120,7 +130,7 @@ export function Map() {
 
           const contentString = `
           <div style="display: flex; align-items: center; justify-content: space-between; min-width: 150px; padding-right: 8px;">
-            <span style="font-family: Arial, sans-serif; font-size: 14px;">${police.category}</span>
+            <span style="font-family: Arial, sans-serif; font-size: 14px;">${formatCategory(police.category)}</span>
           </div>
         `
 
