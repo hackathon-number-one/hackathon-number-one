@@ -8,6 +8,7 @@ const initialZoom = 15
 
 export function Map() {
   const mapRef = useRef(null)
+  const currentInfoWindow = useRef(null) // Add this to track the open InfoWindow
 
   const [map, setMap] = useState(null)
   const [communityReportedCrimes, setCommunityReportedCrimes] = useState([])
@@ -50,17 +51,50 @@ export function Map() {
     ;(async function () {
       if (mapRef.current && map) {
         const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
-        communityReportedCrimes.map(
-          (crime) =>
-            new AdvancedMarkerElement({
+        communityReportedCrimes.map((crime) => {
+          const marker = new AdvancedMarkerElement({
+            map,
+            position: { lat: crime.latitude, lng: crime.longitude },
+            content: new PinElement({
+              scale: 0.875,
+              background: "#ff8000",
+            }).element,
+          })
+
+          const contentString = `
+          <div style="display: flex; align-items: center; justify-content: space-between; min-width: 150px; padding-right: 8px;">
+            <span style="font-family: Arial, sans-serif; font-size: 14px;">${crime.category.name}</span>
+          </div>
+        `
+
+          const infowindow = new google.maps.InfoWindow({
+            content: contentString,
+            pixelOffset: new google.maps.Size(0, -5),
+            disableAutoPan: false,
+          })
+
+          marker.addListener("click", () => {
+            if (currentInfoWindow.current) {
+              currentInfoWindow.current.close()
+            }
+
+            infowindow.open({
+              anchor: marker,
               map,
-              position: { lat: crime.latitude, lng: crime.longitude },
-              content: new PinElement({
-                scale: 0.875,
-                background: "#ff8000",
-              }).element,
-            }),
-        )
+            })
+
+            currentInfoWindow.current = infowindow
+          })
+
+          return marker
+        })
+
+        map.addListener("click", () => {
+          if (currentInfoWindow.current) {
+            currentInfoWindow.current.close()
+            currentInfoWindow.current = null
+          }
+        })
       }
     })()
   }, [map, communityReportedCrimes])
