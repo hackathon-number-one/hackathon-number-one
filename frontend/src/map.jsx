@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
+import { markers } from "./markers"
 
-// Initialize and add the map
 let map
 
 async function initMap(mapElement) {
@@ -31,7 +31,6 @@ export function getMap() {
 
     googleMapsScript.onload = async function () {
       if (mapRef.current) {
-        // Import the required libraries
         const { Map } = await google.maps.importLibrary("maps")
         const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
 
@@ -41,22 +40,36 @@ export function getMap() {
           mapId: "HACKNEY_MAP",
         })
 
-        // Now you can use PinElement
-        const pin = new PinElement({
-          scale: 1.2,
-        })
+        markers.forEach((markerData) => {
+          const pin = new PinElement({
+            background: markerData.pinColor || "#4285F4",
+            scale: markerData.scale || 1.2,
+            borderColor: "#FFFFFF",
+            glyphColor: "#FFFFFF",
+          })
 
-        // Create the marker with the pin
-        new AdvancedMarkerElement({
-          map,
-          position: { lat: 51.5495, lng: 0.0597 },
-          content: pin.element,
+          const marker = new AdvancedMarkerElement({
+            map,
+            position: markerData.position,
+            title: markerData.title,
+            content: pin.element,
+          })
+
+          var infoWindow = new google.maps.InfoWindow({
+            content: markerData.content,
+          })
+
+          marker.addListener("click", () => {
+            if (infoWindow) {
+              infoWindow.close()
+            }
+            infoWindow.open(map, marker)
+          })
         })
       }
     }
 
     return () => {
-      window.initMap = null
       const script = document.querySelector(`script[src*="maps.googleapis.com/maps/api/js"]`)
       if (script) {
         script.remove()
