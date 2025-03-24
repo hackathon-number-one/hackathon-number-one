@@ -27,11 +27,11 @@ export const getFullPostcode = async (input) => {
     }
 
     const json = await response.json()
-    userLocation = {
-      longitude: json.result.longitude,
-      latitude: json.result.latitude,
-    }
 
+    userLocation = {
+      lng: json.result.longitude,
+      lat: json.result.latitude,
+    }
     return userLocation
   } catch {
     console.log("Error getting complete postcode response from Postcodes API")
@@ -39,29 +39,50 @@ export const getFullPostcode = async (input) => {
 }
 
 export const getUserLocationFromThePostcode = (input) => {
+  const trimmedInput = input.replace(/\s+/g, "")
   if (input.length > 6) {
-    getIncompletePostcode(input)
+    return getIncompletePostcode(trimmedInput)
   } else {
-    getFullPostcode(input)
+    return getFullPostcode(trimmedInput)
   }
 }
 
-export const getPoliceAPI = (latitude, longitude) => {
-  const policeAPIRequestURL = new Request(
-    `https://data.police.uk/api/crimes-at-location?date=2025-01&lat=${latitude}&lng=${longitude}`,
-  )
+export const getPoliceAPI = async (latitude, longitude) => {
+  const policeAPIRequestURL = `https://data.police.uk/api/crimes-at-location?date=2025-01&lat=${latitude}&lng=${longitude}`
 
-  fetch(policeAPIRequestURL)
-    .then((response) => response.json())
-    .then((json) => {
-      const crimeData = json.map((crime) => ({
-        category: crime.category,
-        location: {
-          latitude: crime.location.latitude,
-          longitude: crime.location.longitude,
-        },
-        month: crime.month,
-      }))
-      return crimeData
-    })
+  //   fetch(policeAPIRequestURL)
+  //     .then((response) => response.json())
+  //     .then((json) => {
+  //       const crimeData = json.map((crime) => ({
+  //         category: crime.category,
+  //         location: {
+  //           latitude: crime.location.latitude,
+  //           longitude: crime.location.longitude,
+  //         },
+  //         month: crime.month,
+  //       }))
+  //       return crimeData
+  //     })
+
+  try {
+    const response = await fetch(policeAPIRequestURL)
+    if (!response.ok) {
+      throw new Error(`Police API response status: ${response.status}`)
+    }
+
+    const json = await response.json()
+
+    const crimeData = json.map((crime) => ({
+      category: crime.category,
+      location: {
+        latitude: crime.location.latitude,
+        longitude: crime.location.longitude,
+      },
+      month: crime.month,
+    }))
+
+    return crimeData
+  } catch {
+    console.log("Error getting response from Police API")
+  }
 }
