@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { getRandomCrimes } from "./communityCrimes"
+import { getPoliceAPI, getUserLocationFromThePostcode } from "./lib/fetcher"
 
 const initialCentreLatitude = 51.5072
 const initialCentreLongitude = -0.1276
@@ -10,6 +11,17 @@ export function Map() {
 
   const [map, setMap] = useState(null)
   const [communityReportedCrimes, setCommunityReportedCrimes] = useState([])
+  const [policeData, setPoliceData] = useState([])
+
+  const getPoliceCrimeData = useCallback(async () => {
+    const { lng, lat } = await getUserLocationFromThePostcode("SW1A 1AA") //change to dynamically get user postcode
+    const policeData = await getPoliceAPI(lat, lng)
+    setPoliceData(policeData)
+  }, [])
+
+  useEffect(() => {
+    getPoliceCrimeData()
+  })
 
   useEffect(() => {
     setCommunityReportedCrimes(
@@ -34,6 +46,49 @@ export function Map() {
           mapId: "OUR_FUN_MAP",
         })
         setMap(map)
+
+        const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
+
+        //////
+
+        // const map = new Map(mapRef.current, {
+        //   center: { lat: lat, lng: lng },
+        //   zoom: 12,
+        //   mapId: "HACKNEY_MAP",
+        // })
+
+        // Now you can use PinElement
+        // const pin = new PinElement({
+        //   scale: 1.2,
+        // })
+
+        // Create the marker with the pin
+        // new AdvancedMarkerElement({
+        //   map,
+        //   position: { lat: lat, lng: lng },
+        //   content: pin.element,
+        // })
+
+        // for (let i = 0; i < policeData.length; i++) {
+        //   console.log(policeData[i])
+        //   const policeLatitude = policeData[i].location.latitude
+        //   const policeLongitude = policeData[i].location.longitude
+
+        //   console.log("longit", policeLongitude)
+        //   console.log("latitude", policeLatitude)
+
+        //   const pin = new PinElement({
+        //     scale: 1.2,
+        //   })
+
+        //   // Create the marker with the pin
+        //   new AdvancedMarkerElement({
+        //     map,
+        //     position: { lat: latitude, lng: longitude },
+        //     content: pin.element,
+        //   })
+        //   ///
+        // }
       }
     }
 
@@ -45,7 +100,30 @@ export function Map() {
       }
     }
   }, [])
+  // police api pins
+  useEffect(() => {
+    ;(async function () {
+      if (mapRef.current && map) {
+        const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker")
+        policeData.map(
+          (police) =>
+            new AdvancedMarkerElement({
+              map,
+              position: {
+                lat: Number(police.location.latitude),
+                lng: Number(police.location.longitude),
+              },
+              content: new PinElement({
+                scale: 0.875,
+                background: "#0000FF",
+              }).element,
+            }),
+        )
+      }
+    })()
+  }, [map, policeData])
 
+  // community pins
   useEffect(() => {
     ;(async function () {
       if (mapRef.current && map) {
