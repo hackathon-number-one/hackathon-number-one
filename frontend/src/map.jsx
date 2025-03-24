@@ -34,33 +34,6 @@ export function Map() {
           maxZoom: 17,
           mapId: "OUR_FUN_MAP",
         })
-
-        markers.forEach((markerData) => {
-          const pin = new PinElement({
-            background: markerData.pinColor || "#4285F4",
-            scale: markerData.scale || 1.2,
-            borderColor: "#FFFFFF",
-            glyphColor: "#FFFFFF",
-          })
-
-          const marker = new AdvancedMarkerElement({
-            map,
-            position: markerData.position,
-            title: markerData.title,
-            content: pin.element,
-          })
-
-          var infoWindow = new google.maps.InfoWindow({
-            content: markerData.content,
-          })
-
-          marker.addListener("click", () => {
-            if (infoWindow) {
-              infoWindow.close()
-            }
-            infoWindow.open(map, marker)
-          })
-        })
         setMap(map)
       }
     }
